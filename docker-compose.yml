@@ -4,7 +4,7 @@ services:
   mysql:
     image: mysql:5.7
     environment:
-      - MYSQL_ROOT_PASSWORD: wordpress
+      MYSQL_ROOT_PASSWORD: wordpress
   php-fpm:
     image: nawawishkid/wpth:php7.2-fpm
     volumes:

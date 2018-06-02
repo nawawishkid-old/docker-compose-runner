@@ -1,12 +1,12 @@
 version: '3.3'
 
 services:
-  {db}:
-    image: {db}:{db_version}
+  mysql:
+    image: mysql:5.7
     environment:
-      - MYSQL_ROOT_PASSWORD: wordpress
+      MYSQL_ROOT_PASSWORD: wordpress
   php-fpm:
-    image: nawawishkid/wpth:php{php_version}-fpm
+    image: nawawishkid/wpth:php7.2-fpm
     volumes:
       - ./www:/var/www
   apache:

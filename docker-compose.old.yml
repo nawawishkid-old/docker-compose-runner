@@ -23,7 +23,7 @@ services:
     ports:
       - "3306:3306"
     environment:
-      - MYSQL_ROOT_PASSWORD: mysql@wpthai.io
+      MYSQL_ROOT_PASSWORD: mysql@wpthai.io
   php-fpm:
     image: php:7-fpm
     depends_on: mysql
