@@ -34,40 +34,42 @@ helper_arg_exists()
 
 helper_test_echo()
 {
-    echo
-    echo "--- helper_test_echo ---"
-    echo
-    echo "1: $1"
-    echo "2: $2"
-    echo "3: $3"
+    # echo
+    # echo "--- helper_test_echo ---"
+    # echo
+    # echo "1: $1"
+    # echo "2: $2"
+    # echo "3: $3"
 
     local CMD="$1"
     local CMD_ARGS="$2"
+    local EXIT="$3"
     local TRUE_ECHO="TRUE"
     local FALSE_ECHO="FALSE"
     local CALLBACK=""
 
-    # Avoid first arg which is the arg we need to pass to helper_arg_exists()
-    echo "- CMD: ${CMD}"
-    echo "- CMD_ARGS: ${CMD_ARGS[@]}"
-    echo "- All before shift 2: $@"
-    echo "- CMD_ARGS[0]: ${#CMD_ARGS[1]}"
+    # echo "- CMD: ${CMD}"
+    # echo "- CMD_ARGS: ${CMD_ARGS[@]}"
+    # echo "- Exit: $EXIT"
+    # echo "- All before shift 2: $@"
+    # echo "- CMD_ARGS[0]: ${#CMD_ARGS[1]}"
 
+    # Avoid first arg which is the arg we need to pass to helper_arg_exists()
     if [[ ${#CMD_ARGS[@]} -eq 0 || "${#CMD_ARGS[0]}" = "" ]]; then
-        shift
-    else
         shift 2
+    else
+        shift 3
     fi
 
-    echo "- All after shift 2: $@"
-    echo
+    # echo "- All after shift 2: $@"
+    # echo
     # exit
 
-    echo "Loop start..."
+    # echo "Loop start..."
     while [ $# -ne 0 ]; do
-        echo "  In loop: $1"
+        # echo "  In loop: $1"
         case "$1" in
-            --true-echo)
+            --true-echo | --true-echo=*)
                 local RESULT=$(echo "$1" | cut -d= -f2 -s)
                 if [ "$RESULT" = "" ]; then
                     shift
@@ -78,7 +80,7 @@ helper_test_echo()
             ;;
             --false-echo | --false-echo=*)
                 local RESULT=$(echo "$1" | cut -d= -f2 -s)
-                echo '--- FALSE_ECHO ---'
+                # echo '--- FALSE_ECHO ---'
                 if [ "$RESULT" = "" ]; then
                     shift
                     FALSE_ECHO="$1"
@@ -100,8 +102,8 @@ helper_test_echo()
         shift
     done
 
-    echo "Loop end"
-    echo
+    # echo "Loop end"
+    # echo
 
     # Make $CMD and $CMD_ARGS becomes valid command
     local STR_ARGS=""
@@ -110,20 +112,35 @@ helper_test_echo()
         STR_ARGS="${STR_ARGS} $i"
     done
 
-    echo "- STR_ARGS: ${STR_ARGS}"
-    echo "- FULL STR_CMD: ${CMD} ${STR_ARGS}"
+    # echo "- STR_ARGS: ${STR_ARGS}"
+    # echo "- FULL STR_CMD: ${CMD} ${STR_ARGS}"
     
     $CMD $STR_ARGS
+    # echo "$CMD $STR_ARGS"
     
     if [ $? -eq 0 ]; then
-        echo $TRUE_ECHO
-        return 0
+        # echo "Result: $?"
+        # echo "THIS IS TRUE"
+        if [ "$TRUE_ECHO" != "" ]; then
+            echo $TRUE_ECHO
+        fi
+
+        if [ "$EXIT" = "--true-exit" ]; then exit 0
+        else return 0
+        fi
     else
-        echo $FALSE_ECHO
+        # echo "Result: $?"
+        # echo "THIS IS FALSE"
+        if [ "$FALSE_ECHO" != "" ]; then
+            echo $FALSE_ECHO
+        fi
 
         # Callback
         $CALLBACK
-        exit 1
+
+        if [ "$EXIT" = "--false-exit" ]; then exit 1
+        else return 1
+        fi
     fi
 }
 
@@ -131,12 +148,12 @@ helper_arg_exists_echo()
 {
     local CMD="helper_arg_exists"
     local CMD_ARGS=("$1")
-    echo "1: $1"
-    echo "cmd_args: ${CMD_ARGS[@]}"
+    # echo "1: $1"
+    # echo "cmd_args: ${CMD_ARGS[@]}"
     shift
-    echo "all: $@"
+    # echo "all: $@"
     
-    helper_test_echo "$CMD" "${CMD_ARGS[@]}" "$@"
+    helper_test_echo "$CMD" "${CMD_ARGS[@]}" --false-exit "$@"
 }
 
 help_all()
@@ -221,18 +238,18 @@ compose()
         case "$1" in
             build )
                 shift
-                helper_arg_exists_echo "$1" --false-echo "Missing compose name argument: ${APP_NAME} compose build <compose-name> [[--php <version>] [--mysql <version>] [--no-cache]]"
+                helper_arg_exists_echo "$1" --false-echo "Missing compose name argument: ${APP_NAME} compose build <compose-name> [[--php <version>] [--mysql <version>] [--no-cache]]" --true-echo=""
                 compose_build "$@"
                 exit
             ;;
             up )
                 shift
-                helper_arg_exists_echo "$1" --false-echo "Missing compose name argument: ${APP_NAME} compose up <compose-name>"
+                helper_arg_exists_echo "$1" --false-echo "Missing compose name argument: ${APP_NAME} compose up <compose-name>" --true-echo=""
                 compose_up "$1"
             ;;
             down )
                 shift
-                helper_arg_exists_echo "$1" --false-echo="Missing compose name argument: ${APP_NAME} compose down <compose-name>" --exec echo 'hahaha'
+                helper_arg_exists_echo "$1" --false-echo="Missing compose name argument: ${APP_NAME} compose down <compose-name>" --true-echo=""
                 compose_down "$1"
             ;;
             help | --help )
@@ -246,6 +263,14 @@ compose()
     done
 }
 
+compose_get_file_by_project_name()
+{
+    local NAME="$1"
+    local COMPOSED_FILE=$(grep "${NAME}" ${MAP_FILE} | cut -d= -f2)
+
+    echo $COMPOSED_FILE
+}
+
 compose_get_file_by_name()
 {
     if [ "$1" = "" ]
@@ -255,7 +280,7 @@ compose_get_file_by_name()
     fi
 
     local NAME="$1"
-    local COMPOSED_FILE=$(compose_get_file_from_map_by_name "$NAME")
+    local COMPOSED_FILE=$(compose_get_file_by_project_name "$NAME")
 
     if [ "$COMPOSED_FILE" = "" ]
     then
@@ -274,56 +299,90 @@ compose_get_file_by_name()
     # echo 'Running docker-compose up...'
 }
 
-compose_file_exists()
+compose_project_file_exists()
 {
-    echo '--- compose_file_exists ---'
-    echo "$1"
-    if [ -f "$1" ]; then return 0
-    else return 1
+    # echo '--- compose_project_file_exists ---'
+    # echo "File: $1"
+    if [ -f "$1" ]; then
+        # echo "EXISTS"
+        return 0
+    else 
+        # echo "NOT EXISTS"
+        return 1
     fi
 }
 
-compose_file_exists_echo()
+compose_project_dir_exists()
 {
-    echo "--- compose_file_exists_echo ---"
+    # echo '--- compose_project_file_exists ---'
+    # echo "File: $1"
+    if [ -d "$1" ]; then
+        # echo "EXISTS"
+        return 0
+    else 
+        # echo "NOT EXISTS"
+        return 1
+    fi
+}
+
+compose_project_file_exists_echo()
+{
+    # echo "--- compose_project_file_exists_echo ---"
     local ARGS=("$1")
-    echo "${ARGS[@]}"
+    # echo "${ARGS[@]}"
 
-    helper_test_echo "compose_file_exists" "$ARGS" "$@"
+    helper_test_echo "compose_project_file_exists" "$ARGS" --false-exit "$@"
+}
 
-    # : ${2:-"Compose file not exists!"}
-    # local ECHO="$2"
+compose_project_dir_exists_echo()
+{
+    local ARGS=("$1")
 
-    # compose_file_exists "$1"
+    helper_test_echo "compose_project_dir_exists" "$ARGS" --false-exit "$@"
+}
 
-    # if [ $? -eq 0 ]; then return 0
-    # else
-    #     echo $ECHO
-    #     exit
-    # fi
+compose_project_name_exists()
+{
+    local PROJ_NAME="$1"
+    cut -d= -f1 -s "$MAP_FILE" | grep -o "$PROJ_NAME"
+
+    return $?
+}
+
+compose_project_name_exists_echo()
+{
+    # echo "--- compose_project_file_exists_echo ---"
+    local ARGS=("$1")
+    # echo "${ARGS[@]}"
+
+    helper_test_echo "compose_project_name_exists" "$ARGS" --no-exit "$@"
 }
 
 compose_down()
 {
-    echo
-    echo "--- compose_down ---"
-    echo
+    # echo
+    # echo "--- compose_down ---"
+    # echo
     # helper_arg_exists_echo "$1" "compose_down <compose-name> required!"
-    echo "1: $1"
-    local COMPOSED_FILE=$(compose_get_file_from_map_by_name "$1")
-    echo $COMPOSED_FILE
+    # echo "1: $1"
+    local COMPOSED_FILE=$(compose_get_file_by_project_name "$1")
+    # echo $COMPOSED_FILE
     # exit
 
-    compose_file_exists_echo "$COMPOSED_FILE" --false-echo "HELLO!"
-    # exit
-    echo 'aaaaaaaaaaaa'
+    compose_project_file_exists_echo "$COMPOSED_FILE" --false-echo "Compose file of '$1' project does not exists." --true-echo ""
+
+    echo "Composed file: '$COMPOSED_FILE'"
 
     # if [  ]
-    local COMPOSED_FILE_DIR=$(echo $COMPOSED_FILE | grep -o "\w*$")
+    local COMPOSED_FILE_DIR=$(echo $COMPOSED_FILE | grep -oP ".*(?=\/.*\.yml$)")
+
+    echo "Composed file dir: '$COMPOSED_FILE_DIR'"
+
+    compose_project_dir_exists_echo "$COMPOSED_FILE_DIR" --false-echo "Directory of compose project '$1' does not exist." --true-echo ""
 
     cd $COMPOSED_FILE_DIR
-    pwd
-    # docker-compose down
+    echo "Current dir: '$(pwd)'"
+    docker-compose down
 }
 
 compose_up()
@@ -333,22 +392,13 @@ compose_up()
     docker-compose -f $COMPOSED_FILE up -d
 }
 
-compose_get_file_from_map_by_name()
-{
-    local NAME="$1"
-    local COMPOSED_FILE=$(grep "${NAME}" ${MAP_FILE} | cut -d= -f2)
-
-    echo $COMPOSED_FILE
-}
-
 compose_build()
 {
-    echo 'Building compose file...'
-
     local PHP_V="7.2"
     local MYSQL_V="5.7"
     local FLAG_NO_CACHE=0
     local NAME="$1"
+    local OVERRIDE=0
 
     shift
 
@@ -366,11 +416,25 @@ compose_build()
             --no-cache )
                 FLAG_NO_CACHE=1
             ;;
+            --override )
+                OVERRIDE=1
+            ;;
         esac
         
         shift
 
     done
+
+    echo "Checking compose project name '$NAME'..."
+    
+    compose_project_name_exists_echo "$1" --true-echo "Compose project name '$NAME' already exists." --false-echo "Building compose file..."
+
+    if [[ $? -eq 0 && $OVERRIDE -eq 0 ]]; then
+        echo "If you want to override existing project, run this command again with --override flag to override. Exit."
+        exit
+    elif [[ $? -eq 0 && $OVERRIDE -eq 1 ]]; then
+        echo "Overriding project '$NAME'..."
+    fi
 
     if [ "$PHP_V" = "" ]; then
         echo "Missing php version, --php <version> is required."
@@ -397,7 +461,11 @@ compose_build()
 
     if [[ ! -f $COMPOSED_FILE || $FLAG_NO_CACHE -eq 1 ]]
     then
-        echo "Writing new compose file..."
+        echo "Creating the compose file directory..."
+
+        mkdir $COMPOSE_OWN_DIR
+
+        echo 'Writing the compose file...'
 
         cat $COMPOSE_TEMPLATE \
         | sed "s,{root_dir},$ROOTDIR,g; s,{db},mysql,g; s,{db_version},$MYSQL_V,g; s,{php_version},$PHP_V,g;" \

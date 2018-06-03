@@ -11,3 +11,7 @@
 - [ ] Single network, single host
 - [ ] Single network, multiple vhosts
 - [ ] Multiple networks expose to nginx which exposes to public
+
+## Docker Manager (dm)
+- [ ] dm compose delete <compose-name>
+- [x] Check duplicate compose name before building
