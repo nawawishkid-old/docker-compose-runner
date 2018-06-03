@@ -4,6 +4,8 @@ APP_NAME="dm"
 ROOTDIR=${PWD}
 MAP_FILE="${ROOTDIR}/conf/compose/map"
 LOG_DIR="${ROOTDIR}/log/dm"
+COMPOSE_DIR="${ROOTDIR}/conf/compose"
+COMPOSE_PROJECTS_DIR="${COMPOSE_DIR}/projects"
 
 verbose()
 {
@@ -48,7 +50,7 @@ log()
     echo "Lines: $LINES"
 
     if [ "$LINES" -ge 1000 ]; then
-        echo "Write new log file."
+        # echo "Write new log file."
 
         # Find existing file created today
         local EXISTING_FILE=$(find ${LOG_DIR} -type f -name "*${DATE}*" | wc -l)
@@ -61,7 +63,7 @@ log()
             echo $RESULT > "${NEW_FILE}.log"
         fi
     else
-        echo "Append log file."
+        # echo "Append log file."
         echo $RESULT >> $CUR_FILE
     fi
 
@@ -278,18 +280,28 @@ compose()
         case "$1" in
             build )
                 shift
-                helper_arg_exists_echo "$1" --false-echo "Missing compose name argument: ${APP_NAME} compose build <compose-name> [[--php <version>] [--mysql <version>] [--no-cache]]" --true-echo=""
+                helper_arg_exists_echo "$1" --false-echo "Missing compose project name argument: ${APP_NAME} compose build <project-name> [[--php <version>] [--mysql <version>] [--no-cache]]" --true-echo=""
                 compose_build "$@"
+                exit
+            ;;
+            delete)
+                shift
+                helper_arg_exists_echo "$1" --false-echo "Missing compose project name argument: ${APP_NAME} compose delete <project-name>" --true-echo=""
+                # compose_delete "$@"
+                exit
+            ;;
+            ls)
+                compose_ls
                 exit
             ;;
             up )
                 shift
-                helper_arg_exists_echo "$1" --false-echo "Missing compose name argument: ${APP_NAME} compose up <compose-name>" --true-echo=""
+                helper_arg_exists_echo "$1" --false-echo "Missing compose project name argument: ${APP_NAME} compose up <project-name>" --true-echo=""
                 compose_up "$1"
             ;;
             down )
                 shift
-                helper_arg_exists_echo "$1" --false-echo="Missing compose name argument: ${APP_NAME} compose down <compose-name>" --true-echo=""
+                helper_arg_exists_echo "$1" --false-echo="Missing compose project name argument: ${APP_NAME} compose down <project-name>" --true-echo=""
                 compose_down "$1"
             ;;
             help | --help )
@@ -309,34 +321,6 @@ compose_get_file_by_project_name()
     local COMPOSED_FILE=$(grep "${NAME}" ${MAP_FILE} | cut -d= -f2)
 
     echo $COMPOSED_FILE
-}
-
-compose_get_file_by_name()
-{
-    if [ "$1" = "" ]
-    then
-        echo "dm compose up|down <compose-name> required 1 argument."
-        exit
-    fi
-
-    local NAME="$1"
-    local COMPOSED_FILE=$(compose_get_file_by_project_name "$NAME")
-
-    if [ "$COMPOSED_FILE" = "" ]
-    then
-        echo "Compose file of ${NAME} not found."
-        exit
-    fi
-
-    if [ ! -f $COMPOSED_FILE ]
-    then
-        echo "${COMPOSED_FILE} is not a compose file."
-        exit
-    fi
-
-    echo $COMPOSED_FILE
-
-    # echo 'Running docker-compose up...'
 }
 
 compose_project_file_exists()
@@ -407,6 +391,17 @@ compose_project_name_exists_echo()
     helper_test_echo "compose_project_name_exists" "$ARGS" --no-exit "$@"
 }
 
+compose_ls()
+{
+    echo "Compose projects:"
+    echo
+    echo "  Name    "
+    echo "=========="
+    while read proj; do
+        echo "  $proj"
+    done < <(cut -d= -f1 "${COMPOSE_DIR}/map")
+}
+
 compose_down()
 {
     # echo
@@ -436,7 +431,7 @@ compose_down()
 
 compose_up()
 {
-    local COMPOSED_FILE=$(compose_get_file_by_name "$1")
+    local COMPOSED_FILE=$(compose_get_file_by_project_name "$1")
 
     docker-compose -f $COMPOSED_FILE up -d
 
@@ -449,7 +444,6 @@ compose_build()
 {
     local PHP_V="7.2"
     local MYSQL_V="5.7"
-    local FLAG_NO_CACHE=0
     local NAME="$1"
     local OVERRIDE=0
 
@@ -472,9 +466,6 @@ compose_build()
                 shift
                 MYSQL_V="$1"
             ;;
-            --no-cache )
-                FLAG_NO_CACHE=1
-            ;;
             --override )
                 OVERRIDE=1
             ;;
@@ -491,7 +482,7 @@ compose_build()
     if [[ $? -eq 0 && $OVERRIDE -eq 0 ]]; then
         echo "If you want to override existing project, run this command again with --override flag to override. Exit."
         exit
-    elif [[ $? -eq 0 && $OVERRIDE -eq 1 ]]; then
+    elif [[ $? -eq 1 && $OVERRIDE -eq 1 ]]; then
         echo "Overriding project '$NAME'..."
     fi
 
@@ -514,11 +505,10 @@ compose_build()
     fi
 
     local COMPOSE_TEMPLATE="${ROOTDIR}/conf/compose/template/compose-template.yml"
-    local COMPOSE_DIR="${ROOTDIR}/conf/compose"
-    local COMPOSE_OWN_DIR="${COMPOSE_DIR}/${NAME}-php${PHP_V}-mysql${MYSQL_V}"
+    local COMPOSE_OWN_DIR="${COMPOSE_PROJECTS_DIR}/${NAME}-php${PHP_V}-mysql${MYSQL_V}"
     local COMPOSED_FILE=${COMPOSE_OWN_DIR}/docker-compose.yml
 
-    if [[ ! -f $COMPOSED_FILE || $FLAG_NO_CACHE -eq 1 ]]
+    if [[ ! -f $COMPOSED_FILE || $OVERRIDE -eq 1 ]]
     then
         echo "Creating the compose file directory..."
 
@@ -531,7 +521,7 @@ compose_build()
         > $COMPOSED_FILE
 
         compose_build_mapping $NAME $COMPOSED_FILE
-    elif [[ -f $COMPOSED_FILE && $FLAG_NO_CACHE -eq 0 ]]
+    elif [[ -f $COMPOSED_FILE && $OVERRIDE -eq 0 ]]
     then
         echo "This spec has already composed"
         exit
