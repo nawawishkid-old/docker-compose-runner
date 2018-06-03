@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
 APP_NAME="dm"
+ROOTDIR=${PWD}
+MAP_FILE="${ROOTDIR}/conf/compose/map"
+LOG_DIR="${ROOTDIR}/log/dm"
 
 verbose()
 {
@@ -23,6 +26,46 @@ verbose()
     if [ $VERBOSE -eq 1 ]; then
         echo "$TEXT"
     fi
+}
+
+log()
+{
+    local DATE=$(date "+%Y-%m-%d")
+    local CUR_FILE="${LOG_DIR}/$(find ${LOG_DIR}/* -maxdepth 1 -printf '%T+ %p\n' | sort -r | head -n 1 | cut -d" " -f2 | grep -oP '(?<=\/)log-.*\.log$')"
+    local RESULT="[$DATE $(date "+%H:%M:%S")] \"$1\""
+    
+    echo $LOG_DIR
+    echo "Cur_file: $CUR_FILE"
+    # exit
+
+    if [ ! -f $CUR_FILE ]; then
+        echo $RESULT > "${LOG_DIR}/log-${APP_NAME}-${DATE}.log"
+        return 0
+    fi
+
+    local LINES=$(cat $CUR_FILE | wc -l)
+
+    echo "Lines: $LINES"
+
+    if [ "$LINES" -ge 1000 ]; then
+        echo "Write new log file."
+
+        # Find existing file created today
+        local EXISTING_FILE=$(find ${LOG_DIR} -type f -name "*${DATE}*" | wc -l)
+        local NEW_FILE="${LOG_DIR}/log-${APP_NAME}-${DATE}"
+
+        # If there is existing file, create a new one with name appended by number of replications
+        if [ $EXISTING_FILE -gt 0 ]; then
+            echo $RESULT > "${NEW_FILE}-${EXISTING_FILE}.log"
+        else
+            echo $RESULT > "${NEW_FILE}.log"
+        fi
+    else
+        echo "Append log file."
+        echo $RESULT >> $CUR_FILE
+    fi
+
+    return 0
 }
 
 helper_arg_exists()
@@ -195,9 +238,6 @@ then
     exit
 fi
 
-ROOTDIR=${PWD}
-MAP_FILE="${ROOTDIR}/conf/compose/map"
-
 run()
 {
     case "$1" in
@@ -344,7 +384,15 @@ compose_project_dir_exists_echo()
 compose_project_name_exists()
 {
     local PROJ_NAME="$1"
+    # echo "Project name: $1"
     cut -d= -f1 -s "$MAP_FILE" | grep -o "$PROJ_NAME"
+
+    return $?
+}
+
+compose_project_name_valid()
+{
+    echo "$1" | grep -oP "^\w{1}[\w-_]*"
 
     return $?
 }
@@ -352,8 +400,9 @@ compose_project_name_exists()
 compose_project_name_exists_echo()
 {
     # echo "--- compose_project_file_exists_echo ---"
+    # echo "1: $1"
     local ARGS=("$1")
-    # echo "${ARGS[@]}"
+    # echo "Args: ${ARGS[@]}"
 
     helper_test_echo "compose_project_name_exists" "$ARGS" --no-exit "$@"
 }
@@ -390,6 +439,10 @@ compose_up()
     local COMPOSED_FILE=$(compose_get_file_by_name "$1")
 
     docker-compose -f $COMPOSED_FILE up -d
+
+    if [ $? -eq 0 ]; then echo "docker-compose up success!"
+    else echo 'docker-compose up failed!'
+    fi
 }
 
 compose_build()
@@ -400,9 +453,15 @@ compose_build()
     local NAME="$1"
     local OVERRIDE=0
 
+    if ( ! compose_project_name_valid "$NAME" ); then
+        echo "Invalid project name '$NAME'. Valid name must begins with either character or number, not punctuation, for first character. After that the name can also contains dash and underscore."
+        log "Invalid project name '$NAME'. Valid name must begins with either character or number, not punctuation, for first character. After that the name can also contains dash and underscore."
+        exit
+    fi
+
     shift
 
-    while [ "$1" != "" ]
+    while [ $# -ne 0 ]
     do
         case "$1" in
             --php )
@@ -427,7 +486,7 @@ compose_build()
 
     echo "Checking compose project name '$NAME'..."
     
-    compose_project_name_exists_echo "$1" --true-echo "Compose project name '$NAME' already exists." --false-echo "Building compose file..."
+    compose_project_name_exists_echo "$NAME" --true-echo "Compose project name '$NAME' already exists." --false-echo "Building compose file..."
 
     if [[ $? -eq 0 && $OVERRIDE -eq 0 ]]; then
         echo "If you want to override existing project, run this command again with --override flag to override. Exit."
