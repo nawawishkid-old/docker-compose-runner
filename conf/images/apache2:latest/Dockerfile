@@ -1,11 +1,23 @@
 FROM debian:jessie
 
+# Install apache2
 RUN apt-get update && \
-    apt-get -yq install apache2
+    apt-get -y install apache2
+
+# Enable module for php-fpm
 RUN a2enmod proxy proxy_fcgi
-RUN rm -v /etc/apache2/sites-enabled
 
+# Copy default vhost config for php-fpm
 COPY ./php-fpm-default.conf /etc/apache2/sites-available
-COPY ./docker-entrypoint.sh ${PWD}
+COPY ./docker-entrypoint.sh /etc/apache2
 
-CMD [ "bash", "docker-entrypoint.sh" ]
+# Disable all site
+RUN rm -v /etc/apache2/sites-enabled/*
+
+# Enable default site for php-fpm, then restart apache2
+RUN a2ensite php-fpm-default && \ 
+    service apache2 restart
+
+WORKDIR /var/www
+
+CMD [ "bash", "/etc/apache2/docker-entrypoint.sh" ]

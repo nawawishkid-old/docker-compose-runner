@@ -8,14 +8,18 @@ services:
   php-fpm:
     image: nawawishkid/wpth:php7.2-fpm
     volumes:
-      - ./www:/var/www
+      - /var/www/portfolio/wordpress/wpthai.io/www:/var/www
+    depends_on:
+      - mysql
   apache:
     image: nawawishkid/wpth:apache-latest
     volumes:
-      - ./www:/var/www
-      - ./config/apache/sites-available
+      - /var/www/portfolio/wordpress/wpthai.io/www:/var/www
+      - /var/www/portfolio/wordpress/wpthai.io/conf/apache/sites-available
+    ports:
+      - "80:80"
   # nginx:
   #   image: nginx:latest
   #   volumes:
-  #     - ./config/nginx/sites-available
+  #     - /var/www/portfolio/wordpress/wpthai.io/conf/nginx/sites-available
     
