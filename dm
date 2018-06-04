@@ -470,29 +470,28 @@ compose_down()
     # echo
     # helper_arg_exists_echo "$1" "compose_down <compose-name> required!"
     # echo "1: $1"
-    local COMPOSED_FILE=$(compose_get_project_dir_by_name "$1")
+    local COMPOSED_FILE=$(compose_get_project_file_by_name "$1")
     # echo $COMPOSED_FILE
     # exit
 
     compose_project_file_exists_echo "$COMPOSED_FILE" --false-echo "Compose file of '$1' project does not exists." --true-echo ""
 
-    echo "Composed file: '$COMPOSED_FILE'"
+    # echo "Composed file: '$COMPOSED_FILE'"
 
-    # if [  ]
     local COMPOSED_FILE_DIR=$(echo $COMPOSED_FILE | grep -oP ".*(?=\/.*\.yml$)")
 
-    echo "Composed file dir: '$COMPOSED_FILE_DIR'"
+    # echo "Composed file dir: '$COMPOSED_FILE_DIR'"
 
     compose_project_dir_exists_echo "$COMPOSED_FILE_DIR" --false-echo "Directory of compose project '$1' does not exist." --true-echo ""
 
     cd $COMPOSED_FILE_DIR
-    echo "Current dir: '$(pwd)'"
+    # echo "Current dir: '$(pwd)'"
     docker-compose down
 }
 
 compose_up()
 {
-    local COMPOSED_FILE=$(compose_get_project_dir_by_name "$1")
+    local COMPOSED_FILE=$(compose_get_project_file_by_name "$1")
 
     docker-compose -f $COMPOSED_FILE up -d
 
