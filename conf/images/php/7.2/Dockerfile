@@ -9,6 +9,7 @@ RUN set -ex; \
 	apt-get install -y --no-install-recommends \
 		libjpeg-dev \
 		libpng-dev \
+		mysql-client \
 	; \
 	\
 	docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr; \
@@ -38,17 +39,6 @@ RUN { \
 		echo 'opcache.fast_shutdown=1'; \
 		echo 'opcache.enable_cli=1'; \
 	} > /usr/local/etc/php/conf.d/opcache-recommended.ini
-
-# Install mysql-client (command-line interface) for wp-cli
-# RUN apt-get update && \
-#     apt-get install -y \
-#         mysql-client && \
-#         libjpeg-dev \
-#         libpng-dev \
-#     ; \
-
-# Install php-mysql extension for WordPress
-# RUN docker-php-ext-install mysqli
 
 # Copy wp-cli installer to repo
 COPY ./load-wpcli.sh ${PWD}

@@ -36,8 +36,8 @@ log()
     local CUR_FILE="${LOG_DIR}/$(find ${LOG_DIR}/* -maxdepth 1 -printf '%T+ %p\n' | sort -r | head -n 1 | cut -d" " -f2 | grep -oP '(?<=\/)log-.*\.log$')"
     local RESULT="[$DATE $(date "+%H:%M:%S")] \"$1\""
     
-    echo $LOG_DIR
-    echo "Cur_file: $CUR_FILE"
+    # echo "Log_dir: $LOG_DIR"
+    # echo "Cur_file: $CUR_FILE"
     # exit
 
     if [ ! -f $CUR_FILE ]; then
@@ -47,7 +47,7 @@ log()
 
     local LINES=$(cat $CUR_FILE | wc -l)
 
-    echo "Lines: $LINES"
+    # echo "Lines: $LINES"
 
     if [ "$LINES" -ge 1000 ]; then
         # echo "Write new log file."
@@ -114,6 +114,9 @@ helper_test_echo()
     while [ $# -ne 0 ]; do
         # echo "  In loop: $1"
         case "$1" in
+            --no-exit)
+                EXIT="--no-exit"
+            ;;
             --true-echo | --true-echo=*)
                 local RESULT=$(echo "$1" | cut -d= -f2 -s)
                 if [ "$RESULT" = "" ]; then
@@ -287,7 +290,7 @@ compose()
             delete)
                 shift
                 helper_arg_exists_echo "$1" --false-echo "Missing compose project name argument: ${APP_NAME} compose delete <project-name>" --true-echo=""
-                # compose_delete "$@"
+                compose_delete "$@"
                 exit
             ;;
             ls)
@@ -315,12 +318,17 @@ compose()
     done
 }
 
-compose_get_file_by_project_name()
+compose_get_project_dir_by_name()
 {
     local NAME="$1"
     local COMPOSED_FILE=$(grep "${NAME}" ${MAP_FILE} | cut -d= -f2)
 
-    echo $COMPOSED_FILE
+    echo ${COMPOSED_FILE}
+}
+
+compose_get_project_file_by_name()
+{
+    echo "$(compose_get_project_dir_by_name "$1")/docker-compose.yml"
 }
 
 compose_project_file_exists()
@@ -369,7 +377,7 @@ compose_project_name_exists()
 {
     local PROJ_NAME="$1"
     # echo "Project name: $1"
-    cut -d= -f1 -s "$MAP_FILE" | grep -o "$PROJ_NAME"
+    cut -d= -f1 -s "$MAP_FILE" | grep -o "^$PROJ_NAME$"
 
     return $?
 }
@@ -402,6 +410,59 @@ compose_ls()
     done < <(cut -d= -f1 "${COMPOSE_DIR}/map")
 }
 
+compose_get_project_mapping_by_name()
+{
+    local NAME="$1"
+    local MAPPED_DATA=$(grep "^${NAME}=" ${MAP_FILE})
+
+    echo ${MAPPED_DATA}
+}
+
+compose_delete()
+{
+    local NAME="$1"
+    local PROJ_DIR=$(compose_get_project_dir_by_name "$NAME")
+    local PROJ_FILE=$(compose_get_project_file_by_name "$NAME")
+    local PROJ_MAP=$(compose_get_project_mapping_by_name "$NAME")
+
+    echo "Proj_file: $PROJ_FILE"
+
+    log "compose_delete $NAME..."
+
+    compose_project_dir_exists_echo "$PROJ_DIR" --false-echo "ERROR: Project directory of '$NAME' does not exists." --true-echo "Project directory of '$NAME' exists." --no-exit
+
+    if [ $? -eq 0 ]; then
+        echo "Removing project directory..."
+        # Remove project directory
+        rm -r $PROJ_DIR
+
+        if [ $? -eq 0 ]; then
+            echo "Removed project directory of '$NAME'"
+            log "compose_delete 'Removed project directory of '$NAME'"
+        else
+            echo "Failed to remove project directory of '$NAME'"
+            log "compose_delete 'Failed to remove project directory of '$NAME''"
+        fi
+    fi
+
+    # compose_project_file_exists_echo "$PROJ_FILE" --false-echo "ERROR: File of project '$NAME' does not exists." --true-echo "File of project '$NAME' exists."
+
+    helper_arg_exists_echo "$PROJ_MAP" --false-echo "ERROR: Map data of project '$NAME' does not exists." --true-echo "Map data of project '$NAME' exists."
+
+    echo "Unmapping project file..."
+    echo "Map_data: /${NAME}=${PROJ_DIR}/d"
+    # Remove line from map file
+    sed -i "\,${NAME}=${PROJ_DIR},d" $MAP_FILE
+
+    if [ $? -eq 0 ]; then
+        echo "Unmapped project file of '$NAME'"
+        log "compose_delete 'Unmapped project file of '$NAME''"
+    else
+        echo "Failed to unmap project file of '$NAME'."
+        log "compose_delete 'Failed to unmap project file of '$NAME'.'"
+    fi
+}
+
 compose_down()
 {
     # echo
@@ -409,7 +470,7 @@ compose_down()
     # echo
     # helper_arg_exists_echo "$1" "compose_down <compose-name> required!"
     # echo "1: $1"
-    local COMPOSED_FILE=$(compose_get_file_by_project_name "$1")
+    local COMPOSED_FILE=$(compose_get_project_dir_by_name "$1")
     # echo $COMPOSED_FILE
     # exit
 
@@ -431,7 +492,7 @@ compose_down()
 
 compose_up()
 {
-    local COMPOSED_FILE=$(compose_get_file_by_project_name "$1")
+    local COMPOSED_FILE=$(compose_get_project_dir_by_name "$1")
 
     docker-compose -f $COMPOSED_FILE up -d
 
@@ -520,7 +581,7 @@ compose_build()
         | sed "s,{root_dir},$ROOTDIR,g; s,{db},mysql,g; s,{db_version},$MYSQL_V,g; s,{php_version},$PHP_V,g;" \
         > $COMPOSED_FILE
 
-        compose_build_mapping $NAME $COMPOSED_FILE
+        compose_build_mapping $NAME $COMPOSE_OWN_DIR
     elif [[ -f $COMPOSED_FILE && $OVERRIDE -eq 0 ]]
     then
         echo "This spec has already composed"
@@ -532,8 +593,8 @@ compose_build()
 compose_build_mapping()
 {
     local NAME="$1"
-    local COMPOSED_FILE="$2"
-    local MAPPED="$NAME=$COMPOSED_FILE"
+    local COMPOSE_OWN_DIR="$2"
+    local MAPPED="$NAME=$COMPOSE_OWN_DIR"
 
     echo 'Check map file...'
     echo $MAPPED
