@@ -110,35 +110,6 @@ __compose_get_template()
     # echo $(find $COMPOSE_TEMPLATES_DIR -type f -name "${NAME}.template.yml" -printf "%f\n" | grep -oP '^.*(?=\.template\.yml$')
 }
 
-# Check if compose name=path already mapped
-__compose_build_mapping()
-{
-    local NAME="$1"
-    local PROJ_DIR="$2"
-    local MAPPED="$NAME=$PROJ_DIR"
-
-    echo 'Check map file...'
-    echo $MAPPED
-
-    if [ ! -f $COMPOSE_MAP_FILE ]
-    then
-        echo -e "\033[1;31mERROR:\033[0m $COMPOSE_MAP_FILE file not found."
-        exit
-    fi
-
-    echo "Mapping..."
-
-    local GREP=$(grep $MAPPED $COMPOSE_MAP_FILE)
-
-    if [ "$GREP" = "" ]
-    then
-        printf "$MAPPED\n" >> $COMPOSE_MAP_FILE
-        echo "Mapping successful!"
-    else
-        echo "Project name-location already mapped."
-    fi
-}
-
 ##########
 # API for main function
 ##########
@@ -182,24 +153,6 @@ compose_delete()
             log "compose_delete 'Failed to remove project directory of '$NAME''"
         fi
     fi
-
-    # test file_exists "$PROJ_FILE" --fe "\033[1;31mERROR:\033[0m File of project '$NAME' does not exists." --te "File of project '$NAME' exists." --fxit
-
-    # test empty $PROJ_MAP --te "\033[1;31mERROR:\033[0m Map data of project '$NAME' does not exists." --fe "Map data of project '$NAME' exists." --txit
-
-    # echo "Unmapping project file..."
-    # echo "Map_data: ,${NAME}=${PROJ_DIR},d"
-    
-    # Remove line from map file
-    # sed -i "\,${NAME}=${PROJ_DIR},d" $COMPOSE_MAP_FILE
-
-    # if [ $? -eq 0 ]; then
-    #     echo "Unmapped project file of '$NAME'"
-    #     log "compose_delete 'Unmapped project file of '$NAME''"
-    # else
-    #     echo "Failed to unmap project file of '$NAME'."
-    #     log "compose_delete 'Failed to unmap project file of '$NAME'.'"
-    # fi
 }
 
 compose_down()

@@ -43,7 +43,10 @@
 - [x] Check duplicate compose name before building
 - [ ] If compose up multiple project, apache will use the same port. Use nginx as a single proxy which connect the internet with all compose networks.
 - [ ] Try using env variables for default version of php and mysql instead of hardcode it.
-- [ ] Able to create custom docker-compose.yml template
+- [x] Able to create custom docker-compose.yml template
+- [ ] Template is docker-compose.yml template and service volumes directories for all services in network
+- [ ] Able to up/down all available projects with --all
+- [ ] Able to configure dm via dm.conf file
 
 ## Issues
 - [x] Duplicate compose project name when using `dm compose build <name> --override`
@@ -69,7 +72,9 @@
     - templates/
         - default/
             - services/
-            - template.yml
+            - compose-template.yml
+            - template-var/?
+                - default?
         - example/
             - conf/
                 - apache/
@@ -83,6 +88,8 @@
 - log/
     - dm/
 - lib/
+    - dm/
+- cache/
     - dm/
 - dm
 - README.md
