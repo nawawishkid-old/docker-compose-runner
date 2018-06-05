@@ -47,3 +47,43 @@
 
 ## Issues
 - [x] Duplicate compose project name when using `dm compose build <name> --override`
+
+## Compose directories
+```
+- compose/
+    - projects/
+        - example1/
+            - conf/
+                - apache/
+                - php-fpm/
+                - mysql/
+            - app/
+            - docker-compose.yml
+        - example2/
+            - conf/
+                - apache/
+                - php-fpm/
+                - mysql/
+            - app/
+            - docker-compose.yml
+    - templates/
+        - default/
+            - services/
+            - template.yml
+        - example/
+            - conf/
+                - apache/
+                - php-fpm/
+                - mysql/
+            - app/
+            - template.yml
+        - wordpress/
+        - laravel/
+        - magento/
+- log/
+    - dm/
+- lib/
+    - dm/
+- dm
+- README.md
+```
