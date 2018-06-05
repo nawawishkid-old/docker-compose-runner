@@ -1,3 +1,5 @@
 #!/usr/bin/env bash
 
-source ./lib/dm/main.sh
+APP_SOURCE_DIR="./lib/dm"
+
+source ${APP_SOURCE_DIR}/main.sh
