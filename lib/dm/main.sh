@@ -2,15 +2,11 @@
 
 APP_NAME="dm"
 ROOTDIR=${PWD}
-MAP_FILE="${ROOTDIR}/conf/compose/map"
 LOG_DIR="${ROOTDIR}/log/dm"
-COMPOSE_DIR="${ROOTDIR}/conf/compose"
-COMPOSE_PROJECTS_DIR="${COMPOSE_DIR}/projects"
-COMPOSE_TEMPLATE_DIR="${COMPOSE_DIR}/template"
 
 [ -z "$APP_SOURCE_DIR" ] && APP_SOURCE_DIR="."
 
-source ${APP_SOURCE_DIR}/help.sh
+source ${APP_SOURCE_DIR}/help/main.sh
 source ${APP_SOURCE_DIR}/helper.sh
 
 test empty $1 --txec "help_all" --txit

@@ -13,6 +13,7 @@ is_int()
 # tested: true
 empty()
 {
+    # echo "--- empty() ---"
     # echo "Arg: $#"
     [[ -z "$1" || $# -eq 0 || "$1" = "" ]]
     # [ $# -eq 0 ]
@@ -30,6 +31,7 @@ file_exists()
 # tested: true
 dir_exists()
 {
+    # echo "1: $1"
     [ -d "$1" ]
 }
 
@@ -39,7 +41,7 @@ dir_exists()
 # tested: true
 test()
 {
-    # echo "Testing..."
+    # echo -e "\nTesting..."
 
     local CMD=""
     local CMD_ARGS=""
@@ -97,7 +99,9 @@ test()
     if [[ $TYPE = "function" || $TYPE = "builtin" ]]; then
         # echo "command: $CMD $CMD_ARGS"
 
-        "$CMD" "$CMD_ARGS"
+        $CMD $CMD_ARGS
+
+        # echo "---- $?"
         
         RETURNED=$?
 

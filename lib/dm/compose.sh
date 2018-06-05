@@ -1,13 +1,20 @@
 #!/usr/bin/env bash
+
+COMPOSE_MAP_FILE="${ROOTDIR}/conf/compose/map"
+COMPOSE_DIR="${ROOTDIR}/conf/compose"
+COMPOSE_PROJECTS_DIR="${COMPOSE_DIR}/projects"
+COMPOSE_TEMPLATES_DIR="${COMPOSE_DIR}/template"
+
+# Main function
 compose()
 {
 
     while [ "$1" != "" ]
     do
         case "$1" in
-            build )
+            build)
                 shift
-                test empty $1 --te "\033[1;31mERROR:\033[0m Missing compose project name argument: ${APP_NAME} compose build <project-name> [[--php <version>] [--mysql <version>] [--no-cache]]"
+                test empty $1 --te "\033[1;31mERROR:\033[0m Missing compose project name argument: ${APP_NAME} compose build <project-name> [[--php <version>] [--mysql <version>] [--no-cache]]" --txit
 
                 compose_build "$@"
                 exit
@@ -46,35 +53,95 @@ compose()
     done
 }
 
-compose_get_project_dir_by_name()
+##########
+# Private function
+##########
+__compose_get_project_dir_by_name()
 {
     local NAME="$1"
-    local PROJ_DIR=$(grep "${NAME}" ${MAP_FILE} | cut -d= -f2 | head -n 1)
+    local PROJ_DIR="${COMPOSE_PROJECTS_DIR}/${NAME}"
+
+    # test dir_exists "$PROJ_DIR" --txec echo "$PROJ_DIR" 
+    # local PROJ_DIR=$(grep "${NAME}" ${COMPOSE_MAP_FILE} | cut -d= -f2 | head -n 1)
 
     echo ${PROJ_DIR}
 }
 
-compose_get_project_file_by_name()
+__compose_get_project_file_by_name()
 {
-    echo "$(compose_get_project_dir_by_name "$1")/docker-compose.yml"
+    echo "$(__compose_get_project_dir_by_name "$1")/docker-compose.yml"
 }
 
-compose_project_name_exists()
+__compose_project_name_exists()
 {
     local PROJ_NAME="$1"
-    # echo "Project name: $1"
-    cut -d= -f1 -s "$MAP_FILE" | grep -o "^$PROJ_NAME$"
-
-    return $?
+    echo "Proj_name: $1"
+    echo "Map_file: $COMPOSE_MAP_FILE"
+    # cut -d= -f1 -s "$COMPOSE_MAP_FILE" | grep -o "^$PROJ_NAME$"
+    [ $PROJ_NAME = "example" ] && echo "hahahaha"
+    grep -oP "^$PROJ_NAME(?=={1})" $COMPOSE_MAP_FILE
+    
+    local RETURNED=$?
+    echo "Returned: $RETURNED"
+    return $RETURNED
 }
 
-compose_project_name_valid()
+__compose_project_name_valid()
 {
     echo "$1" | grep -oP "^\w{1}[\w-_]*"
 
     return $?
 }
 
+__compose_get_project_mapping_by_name()
+{
+    local NAME="$1"
+    local MAPPED_DATA=$(grep "^${NAME}=" ${COMPOSE_MAP_FILE})
+
+    echo ${MAPPED_DATA}
+}
+
+__compose_get_template()
+{
+    local NAME="$1"
+    
+    echo "${COMPOSE_TEMPLATES_DIR}/${NAME}.template.yml"
+
+    # echo $(find $COMPOSE_TEMPLATES_DIR -type f -name "${NAME}.template.yml" -printf "%f\n" | grep -oP '^.*(?=\.template\.yml$')
+}
+
+# Check if compose name=path already mapped
+__compose_build_mapping()
+{
+    local NAME="$1"
+    local PROJ_DIR="$2"
+    local MAPPED="$NAME=$PROJ_DIR"
+
+    echo 'Check map file...'
+    echo $MAPPED
+
+    if [ ! -f $COMPOSE_MAP_FILE ]
+    then
+        echo -e "\033[1;31mERROR:\033[0m $COMPOSE_MAP_FILE file not found."
+        exit
+    fi
+
+    echo "Mapping..."
+
+    local GREP=$(grep $MAPPED $COMPOSE_MAP_FILE)
+
+    if [ "$GREP" = "" ]
+    then
+        printf "$MAPPED\n" >> $COMPOSE_MAP_FILE
+        echo "Mapping successful!"
+    else
+        echo "Project name-location already mapped."
+    fi
+}
+
+##########
+# API for main function
+##########
 compose_ls()
 {
     echo "Compose projects:"
@@ -86,34 +153,21 @@ compose_ls()
     done < <(cut -d= -f1 "${COMPOSE_DIR}/map")
 }
 
-compose_get_project_mapping_by_name()
-{
-    local NAME="$1"
-    local MAPPED_DATA=$(grep "^${NAME}=" ${MAP_FILE})
-
-    echo ${MAPPED_DATA}
-}
-
-compose_get_template()
-{
-    local NAME="$1"
-    
-    echo $(find $COMPOSE_TEMPLATE_DIR -type f -name "${NAME}.template.yml" -printf "%f\n" | grep -oP '^.*(?=\.template\.yml$')
-}
-
 compose_delete()
 {
     local NAME="$1"
-    local PROJ_DIR=$(compose_get_project_dir_by_name "$NAME")
-    local PROJ_FILE=$(compose_get_project_file_by_name "$NAME")
-    local PROJ_MAP=$(compose_get_project_mapping_by_name "$NAME")
+    local PROJ_DIR=$(__compose_get_project_dir_by_name "$NAME")
+    local PROJ_FILE=$(__compose_get_project_file_by_name "$NAME")
+    # local PROJ_MAP=$(__compose_get_project_mapping_by_name "$NAME")
 
     # echo "Proj_file: $PROJ_FILE"
     # echo "Proj_dir: $PROJ_DIR"
 
     log "compose_delete $NAME..."
 
-    test dir_exists "$PROJ_DIR" --fe "\033[1;31mERROR:\033[0m Project directory of '$NAME' does not exists." --te "Project directory of '$NAME' exists."
+    echo "Finding project directory..."
+
+    test dir_exists "$PROJ_DIR" --fe "\033[1;31mERROR:\033[0m Directory of '$NAME' not found." --te "Found directory of '$NAME'."
 
     if [ $? -eq 0 ]; then
         echo "Removing project directory..."
@@ -121,7 +175,7 @@ compose_delete()
         rm -r $PROJ_DIR
 
         if [ $? -eq 0 ]; then
-            echo "Removed project directory of '$NAME'"
+            echo "Project '$NAME' removed."
             log "compose_delete 'Removed project directory of '$NAME'"
         else
             echo "Failed to remove project directory of '$NAME'"
@@ -129,23 +183,23 @@ compose_delete()
         fi
     fi
 
-    test file_exists "$PROJ_FILE" --fe "\033[1;31mERROR:\033[0m File of project '$NAME' does not exists." --te "File of project '$NAME' exists." --fxit
+    # test file_exists "$PROJ_FILE" --fe "\033[1;31mERROR:\033[0m File of project '$NAME' does not exists." --te "File of project '$NAME' exists." --fxit
 
-    test empty $PROJ_MAP --te "\033[1;31mERROR:\033[0m Map data of project '$NAME' does not exists." --fe "Map data of project '$NAME' exists." --txit
+    # test empty $PROJ_MAP --te "\033[1;31mERROR:\033[0m Map data of project '$NAME' does not exists." --fe "Map data of project '$NAME' exists." --txit
 
-    echo "Unmapping project file..."
+    # echo "Unmapping project file..."
     # echo "Map_data: ,${NAME}=${PROJ_DIR},d"
     
     # Remove line from map file
-    sed -i "\,${NAME}=${PROJ_DIR},d" $MAP_FILE
+    # sed -i "\,${NAME}=${PROJ_DIR},d" $COMPOSE_MAP_FILE
 
-    if [ $? -eq 0 ]; then
-        echo "Unmapped project file of '$NAME'"
-        log "compose_delete 'Unmapped project file of '$NAME''"
-    else
-        echo "Failed to unmap project file of '$NAME'."
-        log "compose_delete 'Failed to unmap project file of '$NAME'.'"
-    fi
+    # if [ $? -eq 0 ]; then
+    #     echo "Unmapped project file of '$NAME'"
+    #     log "compose_delete 'Unmapped project file of '$NAME''"
+    # else
+    #     echo "Failed to unmap project file of '$NAME'."
+    #     log "compose_delete 'Failed to unmap project file of '$NAME'.'"
+    # fi
 }
 
 compose_down()
@@ -154,7 +208,7 @@ compose_down()
     # echo "--- compose_down ---"
     # echo
     # echo "1: $1"
-    local COMPOSED_FILE=$(compose_get_project_file_by_name "$1")
+    local COMPOSED_FILE=$(__compose_get_project_file_by_name "$1")
     # echo $COMPOSED_FILE
     # exit
 
@@ -175,7 +229,7 @@ compose_down()
 
 compose_up()
 {
-    local COMPOSED_FILE=$(compose_get_project_file_by_name "$1")
+    local COMPOSED_FILE=$(__compose_get_project_file_by_name "$1")
 
     docker-compose -f $COMPOSED_FILE up -d
 
@@ -192,7 +246,12 @@ compose_build()
     local TEMPLATE="default"
     local OVERRIDE=0
 
-    if ( ! compose_project_name_valid "$NAME" ); then
+    # echo "Name: $NAME"
+    # echo "Template: $TEMPLATE"
+    # echo "Proj_dir: $PROJ_DIR"
+    # echo "Proj_file: $PROJ_FILE"
+
+    if ( ! __compose_project_name_valid "$NAME" ); then
         echo "Invalid project name '$NAME'. Valid name must begins with either character or number, not punctuation, for first character. After that the name can also contains dash and underscore."
         log "Invalid project name '$NAME'. Valid name must begins with either character or number, not punctuation, for first character. After that the name can also contains dash and underscore."
         exit
@@ -224,9 +283,11 @@ compose_build()
 
     done
 
-    echo "Checking compose project name '$NAME'..."
+    echo "Find existing project name '$NAME'..."
     
-    test compose_project_name_exists "$NAME" --te "Compose project name '$NAME' already exists." --fe "Building compose file..."
+    local PROJ_FILE=$(__compose_get_project_file_by_name "$NAME")
+    
+    test file_exists "$PROJ_FILE" --te "Project name '$NAME' already exists." --fe "No existing project found"
 
     if [[ $? -eq 0 && $OVERRIDE -eq 0 ]]; then
         echo "If you want to override existing project, run this command again with --override flag to override. Exit."
@@ -253,11 +314,13 @@ compose_build()
         exit
     fi
 
-    local COMPOSE_TEMPLATE="${ROOTDIR}/conf/compose/template/compose-template.yml"
-    local COMPOSE_OWN_DIR="${COMPOSE_PROJECTS_DIR}/${NAME}-php${PHP_V}-mysql${MYSQL_V}"
-    local COMPOSED_FILE=${COMPOSE_OWN_DIR}/docker-compose.yml
+    local COMPOSE_TEMPLATE=$(__compose_get_template "$TEMPLATE")
+    
+    test file_exists "$COMPOSE_TEMPLATE" --te "Using template '$TEMPLATE'" --fe "\033[1;31mERROR:\033[0m Template '$TEMPLATE' not found." --fxit
 
-    if [[ ! -f $COMPOSED_FILE || $OVERRIDE -eq 1 ]]
+    local PROJ_DIR=$(__compose_get_project_dir_by_name "$NAME")
+
+    if [[ ! -f $PROJ_FILE || $OVERRIDE -eq 1 ]]
     then
 
         if [ $OVERRIDE -eq 1 ]; then
@@ -267,49 +330,17 @@ compose_build()
 
         echo "Creating the compose file directory..."
 
-        mkdir $COMPOSE_OWN_DIR
+        mkdir $PROJ_DIR
 
         echo 'Writing the compose file...'
 
         cat $COMPOSE_TEMPLATE \
         | sed "s,{root_dir},$ROOTDIR,g; s,{db},mysql,g; s,{db_version},$MYSQL_V,g; s,{php_version},$PHP_V,g;" \
-        > $COMPOSED_FILE
+        > $PROJ_FILE
 
-        compose_build_mapping $NAME $COMPOSE_OWN_DIR
+        # __compose_build_mapping $NAME $PROJ_DIR
 
         echo "Project built successfully!"
-    elif [[ -f $COMPOSED_FILE && $OVERRIDE -eq 0 ]]
-    then
-        echo "This project has already built"
-        exit
-    fi
-}
 
-# Check if compose name=path already mapped
-compose_build_mapping()
-{
-    local NAME="$1"
-    local COMPOSE_OWN_DIR="$2"
-    local MAPPED="$NAME=$COMPOSE_OWN_DIR"
-
-    echo 'Check map file...'
-    echo $MAPPED
-
-    if [ ! -f $MAP_FILE ]
-    then
-        echo -e "\033[1;31mERROR:\033[0m $MAP_FILE file not found."
-        exit
-    fi
-
-    echo "Mapping..."
-
-    local GREP=$(grep $MAPPED $MAP_FILE)
-
-    if [ "$GREP" = "" ]
-    then
-        printf "$MAPPED\n" >> $MAP_FILE
-        echo "Mapping successful!"
-    else
-        echo "Project name-location already mapped."
     fi
 }

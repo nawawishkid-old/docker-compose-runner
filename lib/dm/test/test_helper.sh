@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source ../helper.sh
+source ./lib/dm/helper.sh
 
 
 echo "--- is_int ---"
