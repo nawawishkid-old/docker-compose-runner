@@ -6,6 +6,7 @@ MAP_FILE="${ROOTDIR}/conf/compose/map"
 LOG_DIR="${ROOTDIR}/log/dm"
 COMPOSE_DIR="${ROOTDIR}/conf/compose"
 COMPOSE_PROJECTS_DIR="${COMPOSE_DIR}/projects"
+COMPOSE_TEMPLATE_DIR="${COMPOSE_DIR}/template"
 
 verbose()
 {
@@ -68,6 +69,13 @@ log()
     fi
 
     return 0
+}
+
+helper_is_empty()
+{
+    if [ "$1" != "" ]; then return 0
+    else return 1
+    fi
 }
 
 helper_arg_exists()
@@ -190,6 +198,13 @@ helper_test_echo()
         else return 1
         fi
     fi
+}
+
+helper_is_empty_echo()
+{
+    local CMD_ARGS=("$1")
+
+    helper_test_echo "helper_is_empty" "${CMD_ARGS[@]}" --false-exit "$@"
 }
 
 helper_arg_exists_echo()
@@ -321,9 +336,9 @@ compose()
 compose_get_project_dir_by_name()
 {
     local NAME="$1"
-    local COMPOSED_FILE=$(grep "${NAME}" ${MAP_FILE} | cut -d= -f2)
+    local PROJ_DIR=$(grep "${NAME}" ${MAP_FILE} | cut -d= -f2 | head -n 1)
 
-    echo ${COMPOSED_FILE}
+    echo ${PROJ_DIR}
 }
 
 compose_get_project_file_by_name()
@@ -418,6 +433,13 @@ compose_get_project_mapping_by_name()
     echo ${MAPPED_DATA}
 }
 
+compose_get_template()
+{
+    local NAME="$1"
+    
+    echo $(find $COMPOSE_TEMPLATE_DIR -type f -name "${NAME}.template.yml" -printf "%f\n" | grep -oP '^.*(?=\.template\.yml$')
+}
+
 compose_delete()
 {
     local NAME="$1"
@@ -425,7 +447,8 @@ compose_delete()
     local PROJ_FILE=$(compose_get_project_file_by_name "$NAME")
     local PROJ_MAP=$(compose_get_project_mapping_by_name "$NAME")
 
-    echo "Proj_file: $PROJ_FILE"
+    # echo "Proj_file: $PROJ_FILE"
+    # echo "Proj_dir: $PROJ_DIR"
 
     log "compose_delete $NAME..."
 
@@ -450,7 +473,8 @@ compose_delete()
     helper_arg_exists_echo "$PROJ_MAP" --false-echo "ERROR: Map data of project '$NAME' does not exists." --true-echo "Map data of project '$NAME' exists."
 
     echo "Unmapping project file..."
-    echo "Map_data: /${NAME}=${PROJ_DIR}/d"
+    # echo "Map_data: ,${NAME}=${PROJ_DIR},d"
+    
     # Remove line from map file
     sed -i "\,${NAME}=${PROJ_DIR},d" $MAP_FILE
 
@@ -495,7 +519,7 @@ compose_up()
 
     docker-compose -f $COMPOSED_FILE up -d
 
-    if [ $? -eq 0 ]; then echo "docker-compose up success!"
+    if [ $? -eq 0 ]; then echo "docker-compose up successfully!"
     else echo 'docker-compose up failed!'
     fi
 }
@@ -505,6 +529,7 @@ compose_build()
     local PHP_V="7.2"
     local MYSQL_V="5.7"
     local NAME="$1"
+    local TEMPLATE="default"
     local OVERRIDE=0
 
     if ( ! compose_project_name_valid "$NAME" ); then
@@ -528,6 +553,10 @@ compose_build()
             ;;
             --override )
                 OVERRIDE=1
+            ;;
+            --template)
+                shift
+                TEMPLATE="$1"
             ;;
         esac
         
@@ -570,6 +599,12 @@ compose_build()
 
     if [[ ! -f $COMPOSED_FILE || $OVERRIDE -eq 1 ]]
     then
+
+        if [ $OVERRIDE -eq 1 ]; then
+            echo "Removing existing project..."
+            compose_delete "$NAME"
+        fi
+
         echo "Creating the compose file directory..."
 
         mkdir $COMPOSE_OWN_DIR
@@ -581,9 +616,11 @@ compose_build()
         > $COMPOSED_FILE
 
         compose_build_mapping $NAME $COMPOSE_OWN_DIR
+
+        echo "Project built successfully!"
     elif [[ -f $COMPOSED_FILE && $OVERRIDE -eq 0 ]]
     then
-        echo "This spec has already composed"
+        echo "This project has already built"
         exit
     fi
 }
@@ -604,14 +641,16 @@ compose_build_mapping()
         exit
     fi
 
+    echo "Mapping..."
+
     local GREP=$(grep $MAPPED $MAP_FILE)
 
     if [ "$GREP" = "" ]
     then
-        echo "No map, mapping name-path of compose file..."
         printf "$MAPPED\n" >> $MAP_FILE
+        echo "Mapping successful!"
     else
-        echo "Compose name-path already mapped."
+        echo "Project name-location already mapped."
     fi
 }
 

@@ -39,11 +39,11 @@
 
 ## Docker Manager (dm)
 - [x] list all project
-- [ ] dm compose delete <compose-name>; delete when compose is running?
+- [x] dm compose delete <compose-name>; delete when compose is running?
 - [x] Check duplicate compose name before building
 - [ ] If compose up multiple project, apache will use the same port. Use nginx as a single proxy which connect the internet with all compose networks.
 - [ ] Try using env variables for default version of php and mysql instead of hardcode it.
 - [ ] Able to create custom docker-compose.yml template
 
 ## Issues
-- [ ] Duplicate compose project name when using `dm compose build <name> --override`
+- [x] Duplicate compose project name when using `dm compose build <name> --override`
