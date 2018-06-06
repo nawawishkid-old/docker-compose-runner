@@ -90,22 +90,21 @@ test()
 
     done
 
-    local TYPE=$(type -t "$CMD")
+    local IS_COMMAND=$(command -v "$CMD")
 
     # echo "Cmd: $CMD"
     # echo "Cmd_args: $CMD_ARGS"
-    # echo "Type: $TYPE"
+    # echo "IS_COMMAND: $IS_COMMAND"
 
-    if [[ $TYPE = "function" || $TYPE = "builtin" ]]; then
+    if [ -z "$IS_COMMAND" ]; then RETURNED="$CMD"
+    else 
         # echo "command: $CMD $CMD_ARGS"
 
         $CMD $CMD_ARGS
-
-        # echo "---- $?"
         
         RETURNED=$?
 
-    else RETURNED="$CMD"
+        # echo "RETURNED: $RETURNED"
     fi
 
     # echo "Returned: $RETURNED"
@@ -121,6 +120,12 @@ test()
         [ $FALSE_EXIT -eq 0 ] && exit 1
         return 1
     fi
+}
+
+# Import script
+import()
+{
+    source "${APP_SOURCE_DIR}/${1}.sh"
 }
 
 # Write string with prepended datetime to a file
