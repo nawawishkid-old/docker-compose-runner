@@ -18,7 +18,7 @@ compose_build()
     local NAME="$1"
     local TEMPLATE_NAME="$2"
     local TEMPLATE_DIR="${COMPOSE_TEMPLATES_DIR}/${TEMPLATE_NAME}"
-    local PROJ_DIR="${COMPOSE_PROJECTS_DIR}/${NAME}"
+    local PROJ_DIR="$(__compose_get_project_dir "$NAME")"
     local OVERRIDE=1
 
     shift 2
@@ -42,8 +42,7 @@ compose_build()
     # bold " OVERRIDE" "$OVERRIDE\n"
     
     # Check if project already exists using given name
-    [[ -d "$PROJ_DIR" || -f "${PROJ_DIR}/docker-compose.yml" ]]
-    test $? \
+    test __compose_if_project_exists_by_dir "$PROJ_DIR" \
         --te "$(warn "Project name '$NAME' already exists.")"
 
     # Tell user that they can use --override to override existing project

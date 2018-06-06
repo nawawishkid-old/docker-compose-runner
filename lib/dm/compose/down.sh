@@ -3,11 +3,11 @@
 # This is not a stand-alone script.
 # It's a part of ./compose.sh
 
-compose_delete()
+compose_down()
 {
     # Check if 1st parameter (project name) empty
     test empty $1 \
-        --te "$(err "Missing project name: ${APP_NAME} compose delete PROJECT_NAME")" \
+        --te "$(err "Missing project name: ${APP_NAME} compose down PROJECT_NAME")" \
         --txit
 
     local NAME="$1"
@@ -18,8 +18,13 @@ compose_delete()
         --fe "$(err "Project name '$NAME' not found.")" \
         --fxit
 
-    # Remove project directory
-    test rm -r $PROJ_DIR --te "$(success "Project '$NAME' deleted.")" --fe "$(err "Cannot delete project directory.")"
+    # cd to the directory
+    __compose_cd_project "$PROJ_DIR"
 
+    # Down the project
+    test docker-compose down \
+        --te "$(success "Project '$NAME' is down.")"
+        --fe "$(err "Cannot down the project.")"
+    
     exit
 }

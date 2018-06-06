@@ -22,10 +22,7 @@ compose()
             delete)
                 import "compose/delete"
                 shift
-                test empty $1 --te "$(err "Missing compose project name argument: ${APP_NAME} compose delete <project-name>")" --txit
-                
                 compose_delete "$@"
-                exit
                 ;;
             ls)
                 import "compose/ls"
@@ -35,28 +32,27 @@ compose()
             up)
                 import "compose/up"
                 shift
-                test empty $1 --te "$(err "Missing compose project name argument: ${APP_NAME} compose up <project-name>")" --txit
-                
                 compose_up "$1"
                 ;;
             down)
                 import "compose/down"
                 shift
-                test empty $1 --te "$(err "Missing compose project name argument: ${APP_NAME} compose down <project-name>")" --txit
-                
                 compose_down "$1"
                 ;;
             start)
                 import "compose/start"
-
+                shift
+                compose_start "$1"
                 ;;
             stop)
                 import "compose/stop"
-                
+                shift
+                compose_stop "$1"
                 ;;
             restart)
                 import "compose/restart"
-
+                shift
+                compose_restart "$1"
                 ;;
             help | --help )
                 help_compose
@@ -77,4 +73,21 @@ __compose_project_name_is_valid()
     echo "$1" | grep -oP "^\w{1}[\w-_]*"
 
     return $?
+}
+
+__compose_get_project_dir()
+{
+    echo "${COMPOSE_PROJECTS_DIR}/${1}"
+}
+
+__compose_if_project_exists_by_dir()
+{
+    [[ -d "$1" || -f "${1}/docker-compose.yml" ]]
+}
+
+__compose_cd_project()
+{
+    test cd "$1" \
+        --fe "$(err "Cannot access to the project directory.")" \
+        --fxit
 }
