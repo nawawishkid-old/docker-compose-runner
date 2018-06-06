@@ -42,8 +42,28 @@ out_pair()
         error)
             echo -e "$(o_error "$KEY"): "$VALUE""
             ;;
-        warning)
-            echo -e "$(o_warning "$KEY"): "$VALUE""
+        warn)
+            echo -e "$(o_warn "$KEY"): "$VALUE""
             ;;
     esac
+}
+
+bold()
+{
+    out_pair "$1" "$2" bold
+}
+
+warn()
+{
+    out_pair "\nWARNING" "${1}" warn
+}
+
+err()
+{
+    out_pair "\nERROR" "${1}" error
+}
+
+success()
+{
+    out_pair "\nSUCCESS" "${1}" success
 }
