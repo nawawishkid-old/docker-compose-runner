@@ -35,6 +35,23 @@ dir_exists()
     [ -d "$1" ]
 }
 
+
+in_array () {
+    local NEEDLE="$1"
+
+    shift
+
+    for e; do
+        [ "$e" = "$NEEDLE" ] && return 0
+    done
+
+    return 1
+}
+
+# ARR=("aaa" "bbb" "ccc")
+# in_array "xxx" "${ARR[@]}"
+# echo $?
+
 # Run given function, then response to its returned value by another function and/or string to be echoed.
 #
 # syntax: test [options] <arguments> [options]
