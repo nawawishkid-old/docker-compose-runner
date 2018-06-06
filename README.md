@@ -1,5 +1,5 @@
-# Docker Compose Manager
-Manage docker-compose
+# Docker Compose Runner
+Run `docker-compose` command on any project without changing directory.
 
 ## Features
 - [ ] All compose functions can accept all original `docker-compose` options.
