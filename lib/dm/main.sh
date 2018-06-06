@@ -6,8 +6,9 @@ LOG_DIR="${ROOTDIR}/log/dm"
 
 [ -z "$APP_SOURCE_DIR" ] && APP_SOURCE_DIR="."
 
-source ${APP_SOURCE_DIR}/help/main.sh
 source ${APP_SOURCE_DIR}/helper.sh
+source ${APP_SOURCE_DIR}/output.sh
+source ${APP_SOURCE_DIR}/help/main.sh
 
 test empty $1 --txec "help_all" --txit
 
@@ -51,7 +52,7 @@ do
             run "$1"
         ;;
         compose )
-            source ${APP_SOURCE_DIR}/compose.sh
+            source ${APP_SOURCE_DIR}/compose.dev.sh
             shift
             compose "$@"
             exit
