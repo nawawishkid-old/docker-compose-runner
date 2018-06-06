@@ -9,10 +9,10 @@ PROJECT_MAP="${APP_SOURCE_DIR}/project/MAP"
 
 source ${APP_SOURCE_DIR}/utils.sh
 import "output"
-import "help/main"
+import "help"
 import "project/private"
 
-test empty $1 --txec "help_all" --txit
+test empty $1 --txec "help_main" --txit
 
 # Main function
 # Usage: dm compose [options] COMMAND NAME [options]
@@ -27,7 +27,7 @@ main()
     while [ $# -ne 0 ]; do
         case "$1" in
             help | --help )
-                help_compose
+                help_main
                 exit
             ;;
             build | bundle | config | \
