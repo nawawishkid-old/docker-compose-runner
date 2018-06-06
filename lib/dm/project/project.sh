@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # This is not a stand-alone script.
-# It's a part of ./compose.sh
+# It's a part of ../main.sh
 
 project()
 {
