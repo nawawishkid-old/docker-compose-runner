@@ -20,5 +20,5 @@ compose_delete()
         --fxit
 
     # Remove project directory
-    # test rm -r $PROJ_DIR
+    test rm -r $PROJ_DIR --te "$(success "Project '$NAME' deleted.")" --fe "$(err "Cannot delete project directory.")"
 }
