@@ -1,7 +1,7 @@
 List all registered projects.
 
 ## Usage:
-`dm project [--help] ps`
+`dm proj [--help] ps`
 
 ## Arguments:
 

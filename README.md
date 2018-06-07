@@ -1,10 +1,10 @@
 # Docker Compose Runner
-Run `docker-compose` command on any project without changing directory.
+Run `docker-compose` command on any proj without changing directory.
 
->Note: This project tested only on Ubuntu 16.04 LTS, not on any Mac or Windows. :(
+>Note: This proj tested only on Ubuntu 16.04 LTS, not on any Mac or Windows. :(
 
 ## Features
-- [x] Run any `docker-compose` command on any Docker compose project directory without manually changing directory.
+- [x] Run any `docker-compose` command on any Docker compose proj directory without manually changing directory.
 
 ## Prerequisites
 - You should familiar with command-line interface. And...
@@ -30,29 +30,29 @@ source ${APP_SOURCE_DIR}/main.sh
 4. You can now use `./dm` command in your working directory.
 
 ## Example usage
-Suppose you have multiple Docker compose projects like this:
+Suppose you have multiple Docker compose projs like this:
 ```
-|-- docker-projects
-    |-- project-1
+|-- docker-projs
+    |-- proj-1
     |-- some-directory
-        |-- project-2
+        |-- proj-2
         |-- some-directory
-            |-- project-3
+            |-- proj-3
 |-- dm
 ```
-Instead of moving into each `project-*` directory when you want to run some `docker-compose` on specific project, you just append the name of your project to `docker-compose` command to run on that project like `dm DOCKER_COMMAN PROJECT_NAME`.  
+Instead of moving into each `proj-*` directory when you want to run some `docker-compose` on specific proj, you just append the name of your proj to `docker-compose` command to run on that proj like `dm DOCKER_COMMAN PROJECT_NAME`.  
 
-But before our `dm` knows where your project directory is. You have to register your existing projects directory first:
+But before our `dm` knows where your proj directory is. You have to register your existing projs directory first:
 ```shell
-~$ dm project add project-1 ./docker-projects/project-1
-~$ dm project add project-2 ./docker-projects/some-directory/project-2
-~$ dm project add project-2 ./docker-projects/some-directory/some-directory/project-3
+~$ dm proj add proj-1 ./docker-projs/proj-1
+~$ dm proj add proj-2 ./docker-projs/some-directory/proj-2
+~$ dm proj add proj-2 ./docker-projs/some-directory/some-directory/proj-3
 ```
-Now, you can run any `docker-compose` command for the project you've just registered with `dm`:
+Now, you can run any `docker-compose` command for the proj you've just registered with `dm`:
 ```shell
-~$ dm up project-1 -d
-~$ dm build project-2
-~$ dm create project-3
+~$ dm up proj-1 -d
+~$ dm build proj-2
+~$ dm create proj-3
 ```
 That's it :)
 

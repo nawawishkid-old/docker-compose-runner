@@ -1,7 +1,7 @@
-Register new project or update an existing project.
+Register new proj or update an existing project.
 
 ## Usage:
-`dm project add [--help] PROJECT_NAME PROJECT_DIR [options]`
+`dm proj add [--help] PROJECT_NAME PROJECT_DIR [options]`
 
 ## Arguments:
 - `PROJECT_NAME` -- Name of the project.

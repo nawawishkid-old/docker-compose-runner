@@ -1,7 +1,7 @@
 Unregistered a project.
 
 ## Usage:
-`dm project remove [--help] PROJECT_NAME`
+`dm proj remove [--help] PROJECT_NAME`
 
 ## Arguments:
 - `PROJECT_NAME` -- Name of the project.

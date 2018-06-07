@@ -3,7 +3,7 @@
 #####
 # Private functions
 #####
-__project_map_get()
+__proj_map_get()
 {
     local DIR="$(cat $PROJECT_MAP | grep -P "^$1=")"
 
@@ -26,9 +26,9 @@ __project_map_get()
     return 1
 }
 
-__project_cd()
+__proj_cd()
 {
-    local PROJ_DIR="$(__project_map_get "$1" | cut -d= -f2 -s)"
+    local PROJ_DIR="$(__proj_map_get "$1" | cut -d= -f2 -s)"
 
     # bold "PROJ_DIR" "$PROJ_DIR"
 
@@ -37,6 +37,6 @@ __project_cd()
         --fxit
 
     test cd "$PROJ_DIR" \
-        --fe "$(err "Cannot access to the project directory.")" \
+        --fe "$(err "Cannot access to the proj directory.")" \
         --fxit
 }

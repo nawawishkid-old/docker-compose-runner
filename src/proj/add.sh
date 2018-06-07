@@ -1,28 +1,28 @@
 #!/usr/bin/env bash
 
-# Register project
-project_add()
+# Register proj
+proj_add()
 {
     # bold "@" "$@"
 
-    # Check if 1st parameter (project name) empty
+    # Check if 1st parameter (proj name) empty
     test empty $1 \
-        --te "$(err "No project name given to be added." "project add")" \
+        --te "$(err "No project name given to be added." "proj add")" \
         --txit
 
     [ "$1" = "--help" ]
 
     test $? \
-        --txec "help project_add" \
+        --txec "help proj_add" \
         --txit
 
     # Check if 2nd parameter (directory path) empty
     test empty $2 \
-        --te "$(err "No Docker Compose directory path given to be added.\nUse 'dm project add --help' for more information.")" \
+        --te "$(err "No Docker Compose directory path given to be added.\nUse 'dm proj add --help' for more information.")" \
         --txit
 
     local NAME="$1"
-    local PROJ_DIR="$(__project_escape_dir_path "$2")"
+    local PROJ_DIR="$(__proj_escape_dir_path "$2")"
     local OVERRIDE=1
     local PROJECT_EXISTS=1
 
@@ -45,13 +45,13 @@ project_add()
     # bold "PROJ_DIR" "$PROJ_DIR"
     # bold "OVERRIDE" "$OVERRIDE"
 
-    # Check if project already exists by given name
-    __project_exists "$NAME" "$PROJ_DIR"
+    # Check if proj already exists by given name
+    __proj_exists "$NAME" "$PROJ_DIR"
 
     PROJECT_EXISTS=$?
     
-    # Check if given name is a valid project name
-    test __project_name_is_valid "$NAME" \
+    # Check if given name is a valid proj name
+    test __proj_name_is_valid "$NAME" \
         --fe "$(err "Invalid project name '$NAME'.\n\nValid name must begins with either character or number, not punctuation, for first character. After that the name can also contains dash and underscore.")" \
         --fxit
 
@@ -68,7 +68,7 @@ project_add()
         fi
 
         # Override existing mapping data in ./MAP
-        test __project_map_override "$NAME" "$PROJ_DIR" \
+        test __proj_map_override "$NAME" "$PROJ_DIR" \
             --te "$(success "Project '$NAME' is overridden.")" \
             --fe "$(err "Failed to override project '$NAME'")"
 
@@ -76,20 +76,20 @@ project_add()
     fi
 
     # Append a new mapping data to ./MAP file
-    test __project_map_add "$NAME" "$PROJ_DIR" \
+    test __proj_map_add "$NAME" "$PROJ_DIR" \
         --te "$(success "Project '$NAME' added.")" \
         --fe "$(err "Failed to add project '$NAME'")"
 
     exit
 }
 
-# Check if project exists, specifically for project_add()
-__project_exists()
+# Check if proj exists, specifically for proj_add()
+__proj_exists()
 {
     # bold "1" "$1"
     # bold "2" "$2"
 
-    __project_exists_by_name "$1"
+    __proj_exists_by_name "$1"
     
     if [ $? -eq 0 ]; then
         warn "Project '$1' already exists."
@@ -98,7 +98,7 @@ __project_exists()
 
     # echo "by name not found."
 
-    __project_exists_by_dir "$2"
+    __proj_exists_by_dir "$2"
     
     if [ $? -eq 0 ]; then
         warn "Given directory '$2' already belongs to another project."

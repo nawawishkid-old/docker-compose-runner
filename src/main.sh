@@ -2,8 +2,7 @@
 
 APP_NAME="dm"
 ROOTDIR=${PWD}
-LOG_DIR="${ROOTDIR}/log/dm"
-PROJECT_MAP="${APP_SOURCE_DIR}/project/MAP"
+PROJECT_MAP="${APP_SOURCE_DIR}/proj/MAP"
 DOC_DIR="${APP_SOURCE_DIR}/doc"
 
 # Set APP_SOURCE_DIR
@@ -12,7 +11,7 @@ DOC_DIR="${APP_SOURCE_DIR}/doc"
 # Import dependencies
 source ${APP_SOURCE_DIR}/utils.sh
 import "output"
-import "project/private"
+import "proj/private"
 
 # If no argument given, echo help text
 test empty $1 --txec "help main" --txit
@@ -60,10 +59,10 @@ main()
                 fi
                 # echo "COMMAND: $1"
             ;;
-            project)
-                import "project/project"
+            proj)
+                import "proj/proj"
                 shift
-                project "$@"
+                proj "$@"
                 exit
             ;;
             *)
@@ -98,13 +97,13 @@ main()
         --te "$(err "No project name given.")" \
         --txit
 
-    # Check if given project exists.
-    test __project_exists_by_name "$NAME" \
+    # Check if given proj exists.
+    test __proj_exists_by_name "$NAME" \
         --fe "$(err "Project '$NAME' not found.")" \
         --fxit
 
-    # cd to the project
-    __project_cd "$NAME"
+    # cd to the proj
+    __proj_cd "$NAME"
 
     # Run docker-compose command
     echo "docker-compose -p $NAME "${COMPOSE_OPTS[@]}" "$COMMAND" "${COMMAND_OPTS[@]}""

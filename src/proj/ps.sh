@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 # This is not a stand-alone script.
-# It's a part of ./project.sh
+# It's a part of ./proj.sh
 
-# List all projects
-project_ps()
+# List all projs
+proj_ps()
 {
     o_bold "  PROJECTS\n"
     echo "  ---"
