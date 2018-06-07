@@ -58,7 +58,7 @@ That's it :)
 
 ## Issues
 - [x] ~~[2018/06/07] Unable to use `--help` after docker-compose command e.g. `dm build --help` because the parameter next to `docker-compose` command is reserved for `PROJECT_NAME`. Must fix positional-parameter filtering algorithm in [`./main.sh`](main.sh)~~
-- [ ] [2018/06/07] Unable to add compose_options argument before COMMAND
+- [x] ~~[2018/06/07] Unable to add compose_options argument before COMMAND~~
 
 ## Documentations
-See [this](lib/dm/doc/main.md)
+See [this](src/doc/main.md)
