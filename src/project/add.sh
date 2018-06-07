@@ -41,9 +41,9 @@ project_add()
 
     done
 
-    bold "NAME" "$NAME"
-    bold "PROJ_DIR" "$PROJ_DIR"
-    bold "OVERRIDE" "$OVERRIDE"
+    # bold "NAME" "$NAME"
+    # bold "PROJ_DIR" "$PROJ_DIR"
+    # bold "OVERRIDE" "$OVERRIDE"
 
     # Check if project already exists by given name
     __project_exists "$NAME" "$PROJ_DIR"

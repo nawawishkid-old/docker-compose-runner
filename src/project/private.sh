@@ -24,13 +24,13 @@ __project_cd()
 __project_name_is_valid()
 {
     # Valid name must begins with any word character (including digit) followed by any word character, dash, or underscore.
-    echo "$1" | grep -oP "^\w{1}[\w-_]*"
+    echo "$1" | grep -oqP "^\w{1}[\w-_]*"
 }
 
 # Get project directory path from ./MAP file by given project name.
 __project_get_dir_by_name()
 {
-    cat "$PROJECT_MAP" | grep -oP "(?<=$1=).*"
+    cat "$PROJECT_MAP" | grep -oqP "(?<=$1=).*"
 }
 
 # Check if project exists (registered) by given name

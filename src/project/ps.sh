@@ -6,10 +6,12 @@
 # List all projects
 project_ps()
 {
-    o_bold "NAME\n"
-    echo "---"
+    o_bold "  PROJECTS\n"
+    echo "  ---"
 
     while read data; do
+        # echo $data | cut -d= -f1 -s
+        # echo $data | cut -d= -f2 -s
         echo "  $data"
-    done < <(cut -d= -f1 -s $PROJECT_MAP)
+    done < <(cat $PROJECT_MAP)
 }
