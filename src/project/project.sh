@@ -7,13 +7,13 @@ project()
 {
     # Check if 1st parameter (project command) empty
     test empty $1 \
-        --te "$(err "No command given.\nUse 'dm project help' for more information.")" \
+        --te "$(err "No command given." "project")" \
         --txit
 
     while [ $# -ne 0 ]; do
         case "$1" in
             help | --help)
-                help_project
+                help "project"
             ;;
             add)
                 import 'project/add'

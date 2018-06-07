@@ -3,6 +3,7 @@
 # This is not a stand-alone script.
 # It's a part of ./project.sh
 
+# List all projects
 project_ps()
 {
     o_bold "NAME\n"

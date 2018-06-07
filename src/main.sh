@@ -4,15 +4,18 @@ APP_NAME="dm"
 ROOTDIR=${PWD}
 LOG_DIR="${ROOTDIR}/log/dm"
 PROJECT_MAP="${APP_SOURCE_DIR}/project/MAP"
+DOC_DIR="${APP_SOURCE_DIR}/doc"
 
+# Set APP_SOURCE_DIR
 [ -z "$APP_SOURCE_DIR" ] && APP_SOURCE_DIR="."
 
+# Import dependencies
 source ${APP_SOURCE_DIR}/utils.sh
 import "output"
-import "help"
 import "project/private"
 
-test empty $1 --txec "help_main" --txit
+# If no argument given, echo help text
+test empty $1 --txec "help main" --txit
 
 # Main function
 # Usage: dm compose [options] COMMAND NAME [options]
@@ -27,9 +30,10 @@ main()
     while [ $# -ne 0 ]; do
         case "$1" in
             help | --help )
-                help_main
+                help "main"
                 exit
             ;;
+            # Original `docker-compose` commands
             build | bundle | config | \
             create | down | events | \
             exec | kill | logs | \
@@ -38,10 +42,22 @@ main()
             rm | run | scale | \
             start | stop | top | \
             unpause | up )
+                # If the loop iterate to this point, that means all the next option arguments are options for command of `docker-compose`, not `docker-compose` itself.
+                # So, I switched it to mark that.
                 SWITCHED=0
                 COMMAND="$1"
                 shift
-                NAME="$1"
+
+                echo "$1" | grep -oq "\-\-"
+
+                if [ $? -eq 0 ]; then
+                    warn "This is not 'dm' help text.\nIt's an original 'docker-compose' help text.\n"
+                    
+                    docker-compose "$COMMAND" --help
+                    exit
+                else
+                    NAME="$1"
+                fi
                 # echo "COMMAND: $1"
             ;;
             project)
@@ -50,37 +66,39 @@ main()
                 project "$@"
                 exit
             ;;
-            -* | --*)
+            *)
                 if [ $SWITCHED -eq 0 ]; then COMMAND_OPTS+=("$1")
                 else COMPOSE_OPTS+=("$1")
                 fi
             ;;
-            *)
-                err "Unknown argument '$1'\nUse '${APP_NAME} help' for more information."
-                exit
-            ;;
+            # *)
+            #     err "Unknown argument '$1'."
+            #     exit
+            # ;;
         esac
         
         shift
 
     done
 
-    # bold "COMPOSE_OPTS" "${COMPOSE_OPTS[@]}"
-    # bold "COMMAND_OPTS" "${COMMAND_OPTS[@]}"
-    # bold "SWITCHED" "$SWITCHED"
-    # bold "NAME" "$NAME"
+    # Codes below are for an execution of any `docker-compose` command.
+
+    bold "COMPOSE_OPTS" "${COMPOSE_OPTS[@]}"
+    bold "COMMAND_OPTS" "${COMMAND_OPTS[@]}"
+    bold "SWITCHED" "$SWITCHED"
+    bold "NAME" "$NAME"
 
     # Check if COMMAND given
     test empty "$COMMAND" \
-        --te "$(err "No command given\nUse 'dm compose help' for more information.")" \
+        --te "$(err "No command given.")" \
         --txit
 
     # Check if PROJECT_NAME given
     test empty "$NAME" \
-        --te "$(err "No project name given\nUse 'dm compose help' for more information.")" \
+        --te "$(err "No project name given.")" \
         --txit
 
-    # Check if project exists.
+    # Check if given project exists.
     test __project_exists_by_name "$NAME" \
         --fe "$(err "Project '$NAME' not found.")" \
         --fxit
@@ -88,10 +106,10 @@ main()
     # cd to the project
     __project_cd "$NAME"
 
-    # Run docker-compose
+    # Run docker-compose command
+    echo "docker-compose -p $NAME "${COMPOSE_OPTS[@]}" "$COMMAND" "${COMMAND_OPTS[@]}""
     test docker-compose "${COMPOSE_OPTS[@]}" "$COMMAND" "${COMMAND_OPTS[@]}" \
-        --te "$(success)" \
-        --fe "$(err)"
+        --te "$(success)"
 
     exit
 }
@@ -99,4 +117,5 @@ main()
 #####
 # Executions
 #####
+# Don't forget to run me!
 main "$@"
