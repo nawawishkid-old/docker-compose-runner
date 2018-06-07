@@ -1,89 +1,64 @@
+# Docker Compose Runner
+Run `docker-compose` command on any proj without changing directory.
 
+>Note: This proj tested only on Ubuntu 16.04 LTS, not on any Mac or Windows. :(
 
-## TODO
-- [ ] Create Apache2 vhost automatically
-    - [ ] Create vhost config file in /etc/apache2/sites-available
-    - [ ] Map hostname by appending the name into /etc/hosts
-- [ ] Create nginx config file automatically
-- [ ] 
+## Features
+- [x] Run any `docker-compose` command on any Docker compose proj directory without manually changing directory.
 
-## Types
-- [ ] Single network, single host
-- [ ] Single network, multiple vhosts
-- [ ] Multiple networks expose to nginx which exposes to public
+## Prerequisites
+- You should familiar with command-line interface. And...
+- Yes, [Docker compose](https://docs.docker.com/compose/)!
 
-## Stack
-- [x] Apache2
-- [x] PHP-FPM
-- [ ] NGINX
-- [x] MySQL
-- [ ] MariaDB
-- [ ] OpenSSL
-- [ ] MemCached
-- [ ] Redis
+## Installation
+1. Just clone this repo to any directory you want. :)
+2. Create a file in your working directory named `dm` then makes it executable
+```shell
+your-working-dir$ touch dm
+your-working-dir$ chmod +x dm
+```
+3. Import `dm` source directory by editing the `dm` file you've just created
+```shell
+#!/usr/bin/env bash
 
-## Containers configs
-- PHP-FPM
-    
+# This is your `dm` file, opent it, not a console!
 
-## Apps setup
-- WordPress
-    - Login as www-data
-    - Download location
-    - WordPress version
-    - Database name, username, password, host
-    - Admin name, password, email
-    - plugins
-    - themes
-    - Data import
+APP_SOURCE_DIR=path/to/dm/directory
 
-## Docker Manager (dm)
-- [x] list all project
-- [x] dm compose delete <compose-name>; delete when compose is running?
-- [x] Check duplicate compose name before building
-- [ ] If compose up multiple project, apache will use the same port. Use nginx as a single proxy which connect the internet with all compose networks.
-- [ ] Try using env variables for default version of php and mysql instead of hardcode it.
-- [ ] Able to create custom docker-compose.yml template
+source ${APP_SOURCE_DIR}/main.sh
+```
+4. You can now use `./dm` command in your working directory.
+
+## Example usage
+Suppose you have multiple Docker compose projs like this:
+```
+|-- docker-projs
+    |-- proj-1
+    |-- some-directory
+        |-- proj-2
+        |-- some-directory
+            |-- proj-3
+|-- dm
+```
+Instead of moving into each `proj-*` directory when you want to run some `docker-compose` on specific proj, you just append the name of your proj to `docker-compose` command to run on that proj like `dm DOCKER_COMMAN PROJECT_NAME`.  
+
+But before our `dm` knows where your proj directory is. You have to register your existing projs directory first:
+```shell
+~$ dm proj add proj-1 ./docker-projs/proj-1
+~$ dm proj add proj-2 ./docker-projs/some-directory/proj-2
+~$ dm proj add proj-2 ./docker-projs/some-directory/some-directory/proj-3
+```
+Now, you can run any `docker-compose` command for the proj you've just registered with `dm`:
+```shell
+~$ dm up proj-1 -d
+~$ dm build proj-2
+~$ dm create proj-3
+```
+That's it :)
 
 ## Issues
-- [x] Duplicate compose project name when using `dm compose build <name> --override`
+- [x] ~~[2018/06/07] Unable to use `--help` after docker-compose command e.g. `dm build --help` because the parameter next to `docker-compose` command is reserved for `PROJECT_NAME`. Must fix positional-parameter filtering algorithm in [`./main.sh`](main.sh)~~
+- [x] ~~[2018/06/07] Unable to add compose_options argument before COMMAND~~
 
-## Compose directories
-```
-- compose/
-    - projects/
-        - example1/
-            - conf/
-                - apache/
-                - php-fpm/
-                - mysql/
-            - app/
-            - docker-compose.yml
-        - example2/
-            - conf/
-                - apache/
-                - php-fpm/
-                - mysql/
-            - app/
-            - docker-compose.yml
-    - templates/
-        - default/
-            - services/
-            - template.yml
-        - example/
-            - conf/
-                - apache/
-                - php-fpm/
-                - mysql/
-            - app/
-            - template.yml
-        - wordpress/
-        - laravel/
-        - magento/
-- log/
-    - dm/
-- lib/
-    - dm/
-- dm
-- README.md
-```
+## Documentations
+See [this](src/doc/main.md)
